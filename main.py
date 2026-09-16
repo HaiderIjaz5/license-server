@@ -43,6 +43,14 @@ def revoke_token(token_id: str, db: Session = Depends(get_db)):
         db.commit()
     return RedirectResponse(url="/", status_code=303)
 
+@app.post("/reactivate/{token_id}")
+def reactivate_token(token_id: str, db: Session = Depends(get_db)):
+    token = db.query(models.Token).filter(models.Token.id == token_id).first()
+    if token:
+        token.is_active = True
+        db.commit()
+    return RedirectResponse(url="/", status_code=303)
+
 @app.post("/delete/{token_id}")
 def delete_token(token_id: str, db: Session = Depends(get_db)):
     token = db.query(models.Token).filter(models.Token.id == token_id).first()

@@ -69,6 +69,10 @@
                             <form action="/revoke/{{ t.id }}" method="POST" style="margin:0;">
                                 <button type="submit" class="danger" style="padding: 4px 8px; font-size: 12px; background: #ff9800;">Revoke</button>
                             </form>
+                            {% else %}
+                            <form action="/reactivate/{{ t.id }}" method="POST" style="margin:0;">
+                                <button type="submit" style="padding: 4px 8px; font-size: 12px; background: #28a745;">Activate</button>
+                            </form>
                             {% endif %}
                             <form action="/delete/{{ t.id }}" method="POST" style="margin:0;" onsubmit="return confirm('Are you sure you want to permanently delete this token?');">
                                 <button type="submit" class="danger" style="padding: 4px 8px; font-size: 12px;">Delete</button>
