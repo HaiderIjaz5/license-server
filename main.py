@@ -2,9 +2,10 @@ import os
 import uuid
 import datetime
 import secrets
-from fastapi import FastAPI, Depends, HTTPException, Request, Form
+from fastapi import FastAPI, Depends, HTTPException, Request, Form, status
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
+from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from sqlalchemy.orm import Session
 from database import engine, get_db, Base
 import models
@@ -18,13 +19,27 @@ app = FastAPI(title="License Manager Server")
 os.makedirs("templates", exist_ok=True)
 templates = Jinja2Templates(directory="templates")
 
+security = HTTPBasic()
+
+def get_current_admin(credentials: HTTPBasicCredentials = Depends(security)):
+    import secrets
+    correct_username = secrets.compare_digest(credentials.username, os.getenv("ADMIN_USERNAME", "admin"))
+    correct_password = secrets.compare_digest(credentials.password, os.getenv("ADMIN_PASSWORD", "password123"))
+    if not (correct_username and correct_password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password",
+            headers={"WWW-Authenticate": "Basic"},
+        )
+    return credentials.username
+
 @app.get("/", response_class=HTMLResponse)
-def admin_dashboard(request: Request, db: Session = Depends(get_db)):
+def admin_dashboard(request: Request, db: Session = Depends(get_db), admin: str = Depends(get_current_admin)):
     tokens = db.query(models.Token).order_by(models.Token.created_at.desc()).all()
     return templates.TemplateResponse(request=request, name="index.html", context={"request": request, "tokens": tokens})
 
 @app.post("/generate")
-def generate_token_form(duration: str = Form(...), db: Session = Depends(get_db)):
+def generate_token_form(duration: str = Form(...), db: Session = Depends(get_db), admin: str = Depends(get_current_admin)):
     token_str = "CS-" + secrets.token_hex(12).upper()
     new_token = models.Token(
         id=str(uuid.uuid4()),
@@ -36,7 +51,7 @@ def generate_token_form(duration: str = Form(...), db: Session = Depends(get_db)
     return RedirectResponse(url="/", status_code=303)
 
 @app.post("/revoke/{token_id}")
-def revoke_token(token_id: str, db: Session = Depends(get_db)):
+def revoke_token(token_id: str, db: Session = Depends(get_db), admin: str = Depends(get_current_admin)):
     token = db.query(models.Token).filter(models.Token.id == token_id).first()
     if token:
         token.is_active = False
@@ -44,7 +59,7 @@ def revoke_token(token_id: str, db: Session = Depends(get_db)):
     return RedirectResponse(url="/", status_code=303)
 
 @app.post("/reactivate/{token_id}")
-def reactivate_token(token_id: str, db: Session = Depends(get_db)):
+def reactivate_token(token_id: str, db: Session = Depends(get_db), admin: str = Depends(get_current_admin)):
     token = db.query(models.Token).filter(models.Token.id == token_id).first()
     if token:
         token.is_active = True
@@ -52,7 +67,7 @@ def reactivate_token(token_id: str, db: Session = Depends(get_db)):
     return RedirectResponse(url="/", status_code=303)
 
 @app.post("/delete/{token_id}")
-def delete_token(token_id: str, db: Session = Depends(get_db)):
+def delete_token(token_id: str, db: Session = Depends(get_db), admin: str = Depends(get_current_admin)):
     token = db.query(models.Token).filter(models.Token.id == token_id).first()
     if token:
         db.delete(token)
