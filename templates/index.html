@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>License Manager Admin</title>
+    <style>
+        body { font-family: -apple-system, system-ui, sans-serif; background: #f4f7f6; padding: 20px; }
+        .container { max-width: 900px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background-color: #f8f9fa; }
+        .badge { padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; }
+        .active { background: #d4edda; color: #155724; }
+        .revoked { background: #f8d7da; color: #721c24; }
+        button { padding: 8px 16px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .danger { background: #dc3545; }
+        .danger:hover { background: #c82333; }
+        .form-group { margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Content Syndicator Licenses</h2>
+        
+        <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 30px;">
+            <h3>Generate New License Token</h3>
+            <form action="/generate" method="POST">
+                <div class="form-group">
+                    <label>Duration:</label>
+                    <select name="duration" style="padding: 8px;">
+                        <option value="7">1 Week</option>
+                        <option value="30" selected>1 Month</option>
+                        <option value="90">3 Months</option>
+                        <option value="365">1 Year</option>
+                        <option value="3650">Lifetime</option>
+                    </select>
+                    <button type="submit">Generate Token</button>
+                </div>
+            </form>
+        </div>
+
+        <h3>Active Tokens</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Token</th>
+                    <th>Duration (Days)</th>
+                    <th>Expiry Date</th>
+                    <th>Hardware ID</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for t in tokens %}
+                <tr>
+                    <td><code>{{ t.token_string }}</code></td>
+                    <td>{{ t.duration_days }}</td>
+                    <td>{{ t.expiry_date.strftime('%Y-%m-%d %H:%M') if t.expiry_date else 'Pending First Use' }}</td>
+                    <td><span style="font-size: 11px;">{{ t.hardware_id if t.hardware_id else 'Unbound' }}</span></td>
+                    <td>
+                        <span class="badge {{ 'active' if t.is_active else 'revoked' }}">
+                            {{ 'Active' if t.is_active else 'Revoked' }}
+                        </span>
+                    </td>
+                    <td>
+                        {% if t.is_active %}
+                        <form action="/revoke/{{ t.id }}" method="POST" style="margin:0;">
+                            <button type="submit" class="danger" style="padding: 4px 8px; font-size: 12px;">Revoke</button>
+                        </form>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" style="text-align: center;">No tokens generated yet.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>
