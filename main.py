@@ -21,7 +21,7 @@ templates = Jinja2Templates(directory="templates")
 @app.get("/", response_class=HTMLResponse)
 def admin_dashboard(request: Request, db: Session = Depends(get_db)):
     tokens = db.query(models.Token).order_by(models.Token.created_at.desc()).all()
-    return templates.TemplateResponse("index.html", {"request": request, "tokens": tokens})
+    return templates.TemplateResponse(request=request, name="index.html", context={"request": request, "tokens": tokens})
 
 @app.post("/generate")
 def generate_token_form(duration: str = Form(...), db: Session = Depends(get_db)):
