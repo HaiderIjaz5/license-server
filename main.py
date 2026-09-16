@@ -43,6 +43,14 @@ def revoke_token(token_id: str, db: Session = Depends(get_db)):
         db.commit()
     return RedirectResponse(url="/", status_code=303)
 
+@app.post("/delete/{token_id}")
+def delete_token(token_id: str, db: Session = Depends(get_db)):
+    token = db.query(models.Token).filter(models.Token.id == token_id).first()
+    if token:
+        db.delete(token)
+        db.commit()
+    return RedirectResponse(url="/", status_code=303)
+
 @app.post("/api/validate", response_model=schemas.TokenResponse)
 def validate_token(data: schemas.TokenValidate, db: Session = Depends(get_db)):
     token = db.query(models.Token).filter(models.Token.token_string == data.token_string).first()
