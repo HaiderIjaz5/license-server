@@ -33,6 +33,10 @@ def get_current_admin(credentials: HTTPBasicCredentials = Depends(security)):
         )
     return credentials.username
 
+@app.get("/health")
+def health_check():
+    return {"status": "OK"}
+
 @app.get("/", response_class=HTMLResponse)
 def admin_dashboard(request: Request, db: Session = Depends(get_db), admin: str = Depends(get_current_admin)):
     tokens = db.query(models.Token).order_by(models.Token.created_at.desc()).all()

@@ -3,6 +3,10 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
 import os
+from dotenv import load_dotenv
+env_path = os.path.join(os.path.dirname(__file__), '..', '.env.local')
+if os.path.exists(env_path):
+    load_dotenv(env_path)
 SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./license.db")
 
 # Only use check_same_thread for SQLite
